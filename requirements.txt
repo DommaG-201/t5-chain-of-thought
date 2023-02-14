@@ -1,0 +1,4 @@
+pandas~=1.5.3
+simplet5~=0.1.4
+scikit-learn~=1.2.1
+datasets~=2.9.0
