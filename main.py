@@ -2,73 +2,17 @@ EPOCH_NUM = 3
 MODEL_SIZE = "t5-11b"
 USE_GPU = True
 
+ADJUST_QUESTIONS = False
+MAXIMUM_VALUE = 100
+MINIMUM_VALUE = 0
+
 from glob import glob
 import pandas as pd
 from simplet5 import SimpleT5
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
+from Question import Question
 from datasets import load_dataset
-import re
-import string
-
-# utility method, used to take a written answer and find the final numerical answer given
-# first looks for ###, used in training data to indicate where the answer is
-# then looks for final number in given text
-# all else fails, return arbutary number for now (e.g. 99999)
-def extract_final_answer(text):
-    ans = text.split("### ", 1)
-    if len(ans) > 1:
-        # removes punctuation, mostly incase any numbers use commas e.g. 1,321
-        ans_temp = ans[1].translate(str.maketrans('', '', string.punctuation))
-        return int(ans_temp)
-
-    if re.search(r'\d', text):
-        last_num_predicted = re.findall(r'\d+', text)[-1]
-        last_num_predicted = last_num_predicted.translate(str.maketrans('', '', string.punctuation))
-        return int(last_num_predicted)
-
-    return 999
-
-
-# Moving question to new class, allowing us to easily edit q and a's to increase values later in a single class
-class Question:
-
-    def __init__(self, question, true_answer):
-        self.question = question
-        self.true_answer = true_answer
-        self.prediction = ""
-
-    def get_complexity(self):
-        return self.true_answer.count('<<')
-
-    def get_true_final_answer(self):
-        return extract_final_answer(self.true_answer)
-
-    def get_predicted_final_answer(self):
-        if self.prediction != "":
-            return extract_final_answer(self.prediction)
-
-    # first check for answer after ### like in test,
-    # then assumes final digits are answer
-    # otherwise false - checking answer in both the same, rather than same logic
-    def check_answer(self, predicted, true, question):
-        predicted_ans = predicted.split("### ", 1)
-        if len(predicted_ans) > 1:
-            return int(predicted_ans[1]) == self.get_final_answer
-
-        if re.search(r'\d', predicted):
-            last_num_predicted = re.findall(r'\d+', predicted)[-1]
-            return self.get_final_anwer == int(last_num_predicted)
-
-        # something is missing a number so does not fulfill these conditions - have a look at question and answers
-        print('Question - ', question)
-        print('True - ', true)
-        print('Predicted - ', predicted)
-        print('------------------------------------------------------------')
-        return False
-
-    def set_prediction(self, prediction):
-        self.prediction = prediction
 
 def get_train_and_test_data():
     train_dataset = load_dataset("gsm8k", 'main', split="train")
@@ -81,11 +25,17 @@ def get_train_and_test_data():
 
     train_questions = []
     for i in range(len(train_dict['source_text'])):
-        train_questions.append(Question(train_dict['source_text'][i], train_dict['target_text'][i]))
+        question = Question(train_dict['source_text'][i], train_dict['target_text'][i])
+        if ADJUST_QUESTIONS:
+            question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
+        train_questions.append(question)
 
     test_questions = []
     for i in range(len(test_dict['source_text'])):
-        test_questions.append(Question(test_dict['source_text'][i], test_dict['target_text'][i]))
+        question = Question(test_dict['source_text'][i], test_dict['target_text'][i])
+        if ADJUST_QUESTIONS:
+            question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
+        test_questions.append(question)
 
     train_df = pd.DataFrame(train_dict)
     test_df = pd.DataFrame(test_dict)

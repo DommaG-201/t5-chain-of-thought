@@ -24,7 +24,7 @@ Working 50 minutes, she earned 0.2 x 50 = $<<0.2*50=10>>10.
 #      This method goes through every equation in the answer (between << and >>) and checks it is correct
 #      If it isn't correct (so one of the values were updated), find the true answer to the equation
 #      Replace the false equation with the correct one, using the correct answer found earlier
-#      Add the old, false answer and this true answer to the back of the updated values queue
+#      Add the old, false answer and the new, true answer to the back of the updated values queue
 
 
 def adjust_question(question, answer, lower_bound, upper_bound):
@@ -60,6 +60,6 @@ def check_equations(answer):
     return answer, updated_values
 
 
-new_q, new_ans = adjust_question(question2, answer2, 0, 1000)
+new_q, new_ans = adjust_question(question2, answer2, 100, 100000)
 print(new_q)
 print(new_ans)
