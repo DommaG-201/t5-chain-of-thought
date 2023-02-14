@@ -7,15 +7,25 @@ answer1 = '''Natalia sold 48/2 = <<48/2=24>>24 clips in May.
 Natalia sold 48+24 = <<48+24=72>>72 clips altogether in April and May.
 #### 72'''
 
-question2 = '''Weng earns $12 an hour for babysitting. Yesterday, she just did 50 minutes of babysitting. How much did she earn?'''
+question2 = '''Weng earns $12 an hour for babysitting. 
+Yesterday, she just did 50 minutes of babysitting. How much did she earn?'''
 answer2 = '''Weng earns 12/60 = $<<12/60=0.2>>0.2 per minute.
 Working 50 minutes, she earned 0.2 x 50 = $<<0.2*50=10>>10.
 #### 10'''
 
+#   This method below takes a question and answer from the format provided by gsm8k and updates the values
+#   First it generates numbers in the range for each number in the question
+#   for each pair of original and random replacement it adds it to the updated values queue
+#   then it replaces the text in the question with the new values
+#   The following loops until the updated values queue is empty:
+#      Take the first old/new value pair
+#      replace the values in the answer
+#      run the method check equations
+#      This method goes through every equation in the answer (between << and >>) and checks it is correct
+#      If it isn't correct (so one of the values were updated), find the true answer to the equation
+#      Replace the false equation with the correct one, using the correct answer found earlier
+#      Add the old, false answer and this true answer to the back of the updated values queue
 
-# recursive methods? i.e. for numbers in q, replace matching in a. Then solve replaced <<equations>> in a.
-# Then take updated ans and replace old ans with new ans. Then solve any mismatched equations (if both numbers on left changed, ignore eq from now on).
-# repeat until no more equations are updated
 
 def adjust_question(question, answer, lower_bound, upper_bound):
     q_org_numbers = re.findall(r'\d+', question)
@@ -31,7 +41,6 @@ def adjust_question(question, answer, lower_bound, upper_bound):
         updated_values.pop(0)
         updated_values = updated_values + ans_updated_values
 
-    # check equations, update answers, add updated answers to new_numbers queue
     return question, answer
 
 
