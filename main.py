@@ -7,12 +7,15 @@ MAXIMUM_VALUE = 100
 MINIMUM_VALUE = 0
 
 from glob import glob
+
 import pandas as pd
-from simplet5 import SimpleT5
-from sklearn.metrics import f1_score
-from sklearn.metrics import accuracy_score
-from Question import Question
 from datasets import load_dataset
+from simplet5 import SimpleT5
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+
+from Question import Question
+
 
 def get_train_and_test_data():
     train_dataset = load_dataset("gsm8k", 'main', split="train")
@@ -23,24 +26,23 @@ def get_train_and_test_data():
     test_dict = {'source_text': test_dataset['question'],
                  'target_text': test_dataset['answer']}
 
-    train_questions = []
-    for i in range(len(train_dict['source_text'])):
-        question = Question(train_dict['source_text'][i], train_dict['target_text'][i])
-        if ADJUST_QUESTIONS:
-            question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
-        train_questions.append(question)
-
-    test_questions = []
-    for i in range(len(test_dict['source_text'])):
-        question = Question(test_dict['source_text'][i], test_dict['target_text'][i])
-        if ADJUST_QUESTIONS:
-            question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
-        test_questions.append(question)
+    train_questions = convert_to_questions(train_dict)
+    test_questions = convert_to_questions(test_dict)
 
     train_df = pd.DataFrame(train_dict)
     test_df = pd.DataFrame(test_dict)
 
     return train_df, test_df, train_questions, test_questions
+
+
+def convert_to_questions(dict):
+    questions = []
+    for i in range(len(dict['source_text'])):
+        question = Question(dict['source_text'][i], dict['target_text'][i])
+        if ADJUST_QUESTIONS:
+            question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
+        questions.append(question)
+    return questions
 
 
 class T5Classifier:
@@ -109,13 +111,6 @@ class T5Classifier:
             predicted.append(question.get_predicted_final_answer())
 
         self.evaluate(true, predicted, "overall")
-
-        # question_dictionary = {
-        #   x.get_complexity(): x for x in test_questions
-        # }
-
-        # question_dictionary = dict([(q.get_complexity(), q) for q in test_questions])
-
         q_dict = self.to_complexity_dictionary(test_questions)
 
         # for question_list in q_dict.values():
