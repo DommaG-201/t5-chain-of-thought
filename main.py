@@ -4,12 +4,13 @@ USE_GPU = True
 
 ADJUST_QUESTIONS = False
 MAXIMUM_VALUE = 100
-MINIMUM_VALUE = 0
+MINIMUM_VALUE = 1
 
+import os
 from glob import glob
 
+import datasets
 import pandas as pd
-from datasets import load_dataset
 from simplet5 import SimpleT5
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
@@ -18,8 +19,10 @@ from Question import Question
 
 
 def get_train_and_test_data():
-    train_dataset = load_dataset("gsm8k", 'main', split="train")
-    test_dataset = load_dataset("gsm8k", 'main', split="test")
+    # train_dataset = load_dataset("gsm8k", 'main', split="train", cache_dir="./mycache")
+    # test_dataset = load_dataset("gsm8k", 'main', split="test", cache_dir="./mycache")
+    train_dataset = datasets.load_dataset("gsm8k", 'main', split="train")
+    test_dataset = datasets.load_dataset("gsm8k", 'main', split="test")
 
     train_dict = {'source_text': train_dataset['question'],
                   'target_text': train_dataset['answer']}
@@ -37,11 +40,17 @@ def get_train_and_test_data():
 
 def convert_to_questions(dict):
     questions = []
+    temp = 0
     for i in range(len(dict['source_text'])):
         question = Question(dict['source_text'][i], dict['target_text'][i])
-        if ADJUST_QUESTIONS:
-            question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
-        questions.append(question)
+        try:
+            if ADJUST_QUESTIONS:
+                question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
+            questions.append(question)
+        except:
+            temp += 1
+            print("looped, removing from dataset")
+    print("removed ", temp, " from dataset")
     return questions
 
 
@@ -75,6 +84,7 @@ class T5Classifier:
         model = SimpleT5()
         self.train_model(model, train_df, test_df)
         self.test_model(model, test_questions)
+
 
     # Note currently using extrapolation for ans q's, so we do not change questions trained on (can do this, maybe discuss w/ supervisor)
     def train_model(self, model, train_df, test_df):
@@ -120,4 +130,5 @@ class T5Classifier:
             self.evaluate(true_ans, pred_ans, question_list[0].get_complexity())
 
 
+os.environ['TRANSFORMERS_CACHE'] = '/mnt/lime/homes/dg707/mycache'
 t5_classifier = T5Classifier()

@@ -13,6 +13,16 @@ answer2 = '''Weng earns 12/60 = $<<12/60=0.2>>0.2 per minute.
 Working 50 minutes, she earned 0.2 x 50 = $<<0.2*50=10>>10.
 #### 10'''
 
+question3 = '''Jasper will serve charcuterie at his dinner party. He buys 2 pounds of cheddar cheese for $10, 
+a pound of cream cheese that cost half the price of the cheddar cheese, 
+and a pack of cold cuts that cost twice the price of the cheddar cheese. 
+How much does he spend on the ingredients?'''
+answer3 = '''A pound of cream cheese cost $10 / 2 = $<<10/2=5>>5.
+A pack of cold cuts cost $10 x 2 = $<<10*2=20>>20.
+Jasper spent $10 + $5 + $20 = $<<10+5+20=35>>35 on the ingredients.
+#### 35'''
+
+
 #   This method below takes a question and answer from the format provided by gsm8k and updates the values
 #   First it generates numbers in the range for each number in the question
 #   for each pair of original and random replacement it adds it to the updated values queue
@@ -28,28 +38,37 @@ Working 50 minutes, she earned 0.2 x 50 = $<<0.2*50=10>>10.
 
 
 def adjust_question(question, answer, lower_bound, upper_bound):
-    q_org_numbers = re.findall(r'\d+', question)
+    q_org_numbers = re.findall(r"(?<![a-zA-Z:])[-+]?\d*\.?\d+", question)
     updated_values = []
     for number in q_org_numbers:
         rand_num = random.randint(lower_bound, upper_bound)
         updated_values.append([number, rand_num])
         question = question.replace(str(number), str(rand_num))
 
+    count = 0
     while len(updated_values) > 0:
-        answer = answer.replace(str(updated_values[0][0]), str(updated_values[0][1]))
-        answer, ans_updated_values = check_equations(answer)
+        count += 1
+        if count > 100:
+            raise Exception("loopz")
+        if updated_values[0][0] in answer:
+            answer = answer.replace(str(updated_values[0][0]), str(updated_values[0][1]))
+            answer, ans_updated_values = check_equations(answer)
+            updated_values = updated_values + ans_updated_values
         updated_values.pop(0)
-        updated_values = updated_values + ans_updated_values
 
+    print("done")
     return question, answer
 
 
 def check_equations(answer):
+    answer = remove_second_decimal(answer)
     equations = re.compile('<<(.*?)>>', re.DOTALL | re.IGNORECASE).findall(answer)
     updated_values = []
     if equations:
         for equation in equations:
+            equation = remove_second_decimal(equation)
             true_ans = eval(equation.partition('=')[0])
+            true_ans = round(true_ans, 3)
             stripped = equation.split('=', 1)[0]
             old_answer = equation.split('=', 1)[1]
             stripped += '='
@@ -60,6 +79,15 @@ def check_equations(answer):
     return answer, updated_values
 
 
-new_q, new_ans = adjust_question(question2, answer2, 100, 100000)
-print(new_q)
-print(new_ans)
+def remove_second_decimal(answer):
+    numbers = re.findall(r"(?<![a-zA-Z:])[-+]?\d*\.?\d+\.\d+", answer)
+    for number in numbers:
+        if number.count('.') > 1:
+            index = number.index('.', number.index('.') + 1)
+            answer = answer.replace(number, number[:index])
+    return answer
+
+# new_q, new_ans = adjust_question(question3, answer3, 100, 100000)
+# print(new_q)
+# print(new_ans)
+# print(remove_second_decimal("hello there 34.23.212+5.2=5"))
