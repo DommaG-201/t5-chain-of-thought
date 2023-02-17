@@ -19,10 +19,10 @@ from Question import Question
 
 
 def get_train_and_test_data():
-    # train_dataset = load_dataset("gsm8k", 'main', split="train", cache_dir="./mycache")
-    # test_dataset = load_dataset("gsm8k", 'main', split="test", cache_dir="./mycache")
-    train_dataset = datasets.load_dataset("gsm8k", 'main', split="train")
-    test_dataset = datasets.load_dataset("gsm8k", 'main', split="test")
+    train_dataset = datasets.load_dataset("gsm8k", 'main', split="train", cache_dir="./mycache")
+    test_dataset = datasets.load_dataset("gsm8k", 'main', split="test", cache_dir="./mycache")
+    # train_dataset = datasets.load_dataset("gsm8k", 'main', split="train")
+    # test_dataset = datasets.load_dataset("gsm8k", 'main', split="test")
 
     train_dict = {'source_text': train_dataset['question'],
                   'target_text': train_dataset['answer']}
@@ -131,4 +131,5 @@ class T5Classifier:
 
 
 os.environ['TRANSFORMERS_CACHE'] = '/mnt/lime/homes/dg707/mycache'
+print(os.getcwd())
 t5_classifier = T5Classifier()

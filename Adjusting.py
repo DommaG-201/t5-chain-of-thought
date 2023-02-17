@@ -1,6 +1,8 @@
 import random
 import re
 
+# write thrown out questions to file to evaluate why later
+
 question1 = '''Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May.
 How many clips did Natalia sell altogether in April and May?'''
 answer1 = '''Natalia sold 48/2 = <<48/2=24>>24 clips in May.
@@ -87,7 +89,8 @@ def remove_second_decimal(answer):
             answer = answer.replace(number, number[:index])
     return answer
 
-# new_q, new_ans = adjust_question(question3, answer3, 100, 100000)
-# print(new_q)
-# print(new_ans)
+
+new_q, new_ans = adjust_question(question2, answer2, 1000, 1000000)
+print(new_q)
+print(new_ans)
 # print(remove_second_decimal("hello there 34.23.212+5.2=5"))
