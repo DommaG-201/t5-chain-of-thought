@@ -50,7 +50,7 @@ def adjust_question(question, answer, lower_bound, upper_bound):
     count = 0
     while len(updated_values) > 0:
         count += 1
-        if count > 100:
+        if count > 100 or (not check_values_size(updated_values, upper_bound)):
             raise Exception([org_question, org_answer, question, answer])
         if updated_values[0][0] in answer:
             answer = answer.replace(str(updated_values[0][0]), str(updated_values[0][1]))
@@ -58,7 +58,7 @@ def adjust_question(question, answer, lower_bound, upper_bound):
             updated_values = updated_values + ans_updated_values
         updated_values.pop(0)
 
-    print("done")
+    # print("done")
     return question, answer
 
 
@@ -88,6 +88,16 @@ def remove_second_decimal(answer):
             index = number.index('.', number.index('.') + 1)
             answer = answer.replace(number, number[:index])
     return answer
+
+
+# makes sure no values are too large, and slow down processing. Returns false if there's an issue
+def check_values_size(updated_values, max):
+    for i in updated_values:
+        for j in i:
+            if int(j) > (max * max):
+                return False
+
+    return True
 
 # new_q, new_ans = adjust_question(question2, answer2, 1000, 1000000)
 # print(new_q)

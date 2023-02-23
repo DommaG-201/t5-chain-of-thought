@@ -10,7 +10,7 @@ def write_deleted_questions(rows, filename):
     if os.path.exists(filename):
         os.remove(filename)
 
-    with open(filename, 'w') as file:
+    with open(filename, 'w', encoding="utf-8") as file:
         csvwriter = csv.writer(file)
         csvwriter.writerow(fields)
         csvwriter.writerows(rows)

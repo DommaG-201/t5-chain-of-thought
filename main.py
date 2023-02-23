@@ -15,6 +15,7 @@ import datasets
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
+from tqdm import tqdm
 
 from FileWriter import write_deleted_questions
 from Question import Question
@@ -40,21 +41,29 @@ def get_train_and_test_data():
     return train_df, test_df, train_questions, test_questions
 
 
-def convert_to_questions(dict, filename):
+def convert_to_questions(dict, name):
     questions = []
     temp = 0
     deleted_questions = []
-    filename = REMOVED_QUESTIONS_FILENAME + filename + '.csv'
-    for i in range(len(dict['source_text'])):
+    filename = REMOVED_QUESTIONS_FILENAME + '_' + name + '.csv'
+    print('Processing ' + name + ' questions and answers:')
+    for i in tqdm(range(len(dict['source_text']))):
         question = Question(dict['source_text'][i], dict['target_text'][i])
-        try:
-            if ADJUST_QUESTIONS:
-                question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
-            questions.append(question)
-        except Exception as ex:
-            temp += 1
-            deleted_questions.append(ex.args[0])
-            print("looped, removing from dataset")
+        attempts = 0
+        processed = False
+        while not processed:
+            try:
+                if ADJUST_QUESTIONS:
+                    question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
+                questions.append(question)
+                processed = True
+            except Exception as ex:
+                if attempts >= 50:
+                    deleted_questions.append(ex.args[0])
+                    temp += 1
+                    processed = True
+                else:
+                    attempts += 1
     print("removed ", temp, " from dataset")
     write_deleted_questions(deleted_questions, filename)
     return questions
@@ -120,7 +129,8 @@ class T5Classifier:
         # for each test data perform prediction
         true = []
         predicted = []
-        for question in test_questions:
+        print("Testing model:")
+        for question in tqdm(test_questions):
             prediction = model.predict(question.question)[0]
             question.set_prediction(prediction)
             true.append(question.get_true_final_answer())
