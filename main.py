@@ -2,19 +2,22 @@ EPOCH_NUM = 3
 MODEL_SIZE = "t5-11b"
 USE_GPU = True
 
-ADJUST_QUESTIONS = False
+ADJUST_QUESTIONS = True
 MAXIMUM_VALUE = 100
 MINIMUM_VALUE = 1
+
+REMOVED_QUESTIONS_FILENAME = './data/removed_questions'
 
 import os
 from glob import glob
 
 import datasets
 import pandas as pd
-from simplet5 import SimpleT5
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
+from tqdm import tqdm
 
+from FileWriter import write_deleted_questions
 from Question import Question
 
 
@@ -29,8 +32,8 @@ def get_train_and_test_data():
     test_dict = {'source_text': test_dataset['question'],
                  'target_text': test_dataset['answer']}
 
-    train_questions = convert_to_questions(train_dict)
-    test_questions = convert_to_questions(test_dict)
+    train_questions = convert_to_questions(train_dict, "train")
+    test_questions = convert_to_questions(test_dict, "test")
 
     train_df = pd.DataFrame(train_dict)
     test_df = pd.DataFrame(test_dict)
@@ -38,19 +41,31 @@ def get_train_and_test_data():
     return train_df, test_df, train_questions, test_questions
 
 
-def convert_to_questions(dict):
+def convert_to_questions(dict, name):
     questions = []
     temp = 0
-    for i in range(len(dict['source_text'])):
+    deleted_questions = []
+    filename = REMOVED_QUESTIONS_FILENAME + '_' + name + '.csv'
+    print('Processing ' + name + ' questions and answers:')
+    for i in tqdm(range(len(dict['source_text']))):
         question = Question(dict['source_text'][i], dict['target_text'][i])
-        try:
-            if ADJUST_QUESTIONS:
-                question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
-            questions.append(question)
-        except:
-            temp += 1
-            print("looped, removing from dataset")
+        attempts = 0
+        processed = False
+        while not processed:
+            try:
+                if ADJUST_QUESTIONS:
+                    question.update_values(MINIMUM_VALUE, MAXIMUM_VALUE)
+                questions.append(question)
+                processed = True
+            except Exception as ex:
+                if attempts >= 50:
+                    deleted_questions.append(ex.args[0])
+                    temp += 1
+                    processed = True
+                else:
+                    attempts += 1
     print("removed ", temp, " from dataset")
+    write_deleted_questions(deleted_questions, filename)
     return questions
 
 
@@ -81,9 +96,9 @@ class T5Classifier:
 
     def run_model(self):
         train_df, test_df, train_questions, test_questions = get_train_and_test_data()
-        model = SimpleT5()
-        self.train_model(model, train_df, test_df)
-        self.test_model(model, test_questions)
+        # model = SimpleT5()
+        # self.train_model(model, train_df, test_df)
+        # self.test_model(model, test_questions)
 
 
     # Note currently using extrapolation for ans q's, so we do not change questions trained on (can do this, maybe discuss w/ supervisor)
@@ -114,7 +129,8 @@ class T5Classifier:
         # for each test data perform prediction
         true = []
         predicted = []
-        for question in test_questions:
+        print("Testing model:")
+        for question in tqdm(test_questions):
             prediction = model.predict(question.question)[0]
             question.set_prediction(prediction)
             true.append(question.get_true_final_answer())
@@ -131,5 +147,4 @@ class T5Classifier:
 
 
 os.environ['TRANSFORMERS_CACHE'] = '/mnt/lime/homes/dg707/mycache'
-print(os.getcwd())
 t5_classifier = T5Classifier()
