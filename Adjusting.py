@@ -94,7 +94,7 @@ def remove_second_decimal(answer):
 def check_values_size(updated_values, max):
     for i in updated_values:
         for j in i:
-            if int(j) > (max * max):
+            if float(j) > (max * max):
                 return False
 
     return True

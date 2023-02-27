@@ -1,8 +1,10 @@
+from simplet5 import SimpleT5
+
 EPOCH_NUM = 3
 MODEL_SIZE = "t5-11b"
 USE_GPU = True
 
-ADJUST_QUESTIONS = True
+ADJUST_QUESTIONS = False
 MAXIMUM_VALUE = 100
 MINIMUM_VALUE = 1
 
@@ -96,9 +98,9 @@ class T5Classifier:
 
     def run_model(self):
         train_df, test_df, train_questions, test_questions = get_train_and_test_data()
-        # model = SimpleT5()
-        # self.train_model(model, train_df, test_df)
-        # self.test_model(model, test_questions)
+        model = SimpleT5()
+        self.train_model(model, train_df, test_df)
+        self.test_model(model, test_questions)
 
 
     # Note currently using extrapolation for ans q's, so we do not change questions trained on (can do this, maybe discuss w/ supervisor)
