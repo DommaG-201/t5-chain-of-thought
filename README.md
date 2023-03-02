@@ -22,7 +22,7 @@ Note that when running in terminal you can adjust the program as following:
 
 If any variable isn't defined, then the var will default to the following values:
 
-T5_MODEL_NAME = t5-base
+T5_MODEL_NAME = t5-base (note input can be 't5-small', 't5-base', 't5-11b' etc.)
 
 ADJUST_QUESTIONS = False
 
