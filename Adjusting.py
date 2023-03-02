@@ -36,6 +36,9 @@ Jasper spent $10 + $5 + $20 = $<<10+5+20=35>>35 on the ingredients.
 #      Replace the false equation with the correct one, using the correct answer found earlier
 #      Add the old, false answer and the new, true answer to the back of the updated values queue
 
+# Note that this isn't 100% accurate, something to take into account for the evaluation.
+# Additionally, it sometimes goes against logical reasoning i.e. resulting in negatives
+# for things that cannot really be negative e.g. pages left to read in a book.
 
 def adjust_question(question, answer, lower_bound, upper_bound):
     q_org_numbers = re.findall(r"(?<![a-zA-Z:])[-+]?\d*\.?\d+", question)
@@ -54,15 +57,16 @@ def adjust_question(question, answer, lower_bound, upper_bound):
             raise Exception([org_question, org_answer, question, answer])
         if updated_values[0][0] in answer:
             answer = answer.replace(str(updated_values[0][0]), str(updated_values[0][1]))
-            answer, ans_updated_values = check_equations(answer)
+            answer, ans_updated_values = update_equations(answer)
             updated_values = updated_values + ans_updated_values
         updated_values.pop(0)
 
-    # print("done")
+    if not check_equations(answer):
+        raise Exception([org_question, org_answer, question, answer])
     return question, answer
 
 
-def check_equations(answer):
+def update_equations(answer):
     answer = remove_second_decimal(answer)
     equations = re.compile('<<(.*?)>>', re.DOTALL | re.IGNORECASE).findall(answer)
     updated_values = []
@@ -79,6 +83,13 @@ def check_equations(answer):
             if str(old_answer) != str(true_ans):
                 updated_values.append([old_answer, true_ans])
     return answer, updated_values
+
+
+def check_equations(answer):
+    ans, updated_values = update_equations(answer)
+    if not updated_values:
+        return True
+    return False
 
 
 def remove_second_decimal(answer):
